@@ -33,7 +33,7 @@ router.post('/signup', async (req: Request<{}, {}, SignupRequest>, res: Response
 
     const { data, error } = await supabase
         .from('users')
-        .insert([{ name, lastName, patronymic, login, password: password_hash, head }])
+        .insert([{ name, lastName, patronymic, login, password: password_hash, head, isAdmin: false }])
         .select()
         .maybeSingle();
 
@@ -48,7 +48,7 @@ router.post('/signup', async (req: Request<{}, {}, SignupRequest>, res: Response
         lastName: data.lastName,
         patronymic: data.patronymic,
         login: data.login,
-        isAdmin: false
+        isAdmin: data.isAdmin
     });
 });
 
