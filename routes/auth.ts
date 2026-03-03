@@ -47,7 +47,8 @@ router.post('/signup', async (req: Request<{}, {}, SignupRequest>, res: Response
         name: data.name,
         lastName: data.lastName,
         patronymic: data.patronymic,
-        login: data.login
+        login: data.login,
+        isAdmin: false
     });
 });
 
@@ -70,7 +71,7 @@ router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) 
     if (!match) return res.status(401).json({ error: 'Вы ввели неверный пароль' });
 
     const token = jwt.sign({ sub: user.id, login: user.login }, JWT_SECRET, { expiresIn: JWT_EXP });
-    res.json({ token, id: user.id, name: user.name, lastName: user.lastName, patronymic: user.patronymic, login: user.login });
+    res.json({ token, id: user.id, name: user.name, lastName: user.lastName, patronymic: user.patronymic, login: user.login, isAdmin: user.isAdmin });
 });
 
 // Получение информации о текущем пользователе
