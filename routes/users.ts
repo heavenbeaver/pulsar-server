@@ -4,7 +4,15 @@ import { supabase } from '../config/supabase.js';
 const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
-    const { data, error } = await supabase.from("users").select("*");
+    const { managerId } = req.query;
+
+    let query = supabase.from("users").select("*");
+
+    if (managerId) {
+        query = query.or(`head.eq.${managerId}`);
+    }
+
+    const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });

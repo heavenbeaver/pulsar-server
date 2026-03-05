@@ -19,12 +19,12 @@ interface TodoPayload {
 router.use(requireAuth); // обязательная авторизация для маршрута
 
 router.get("/", async (req: Request, res: Response) => {
-    const {id} = req.query;
+    const {userId} = req.query;
 
     let query = supabase.from('todos').select('*');
 
-    if (id) {
-        query = query.or(`creator.eq.${id},responsible.eq.${id}`);
+    if (userId) {
+        query = query.or(`creator.eq.${userId},responsible.eq.${userId}`);
     }
 
     const { data, error } = await query;
