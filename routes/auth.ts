@@ -4,10 +4,11 @@ import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 
-const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET must be defined');
 const JWT_EXP = '7d';
+
+const router = Router();
 
 interface SignupRequest {
     name: string;
@@ -65,10 +66,10 @@ router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) 
 
     if (error) return res.status(500).json({ error: error.message });
     
-    if (!user) return res.status(401).json({ error: 'Пользователя с таким логином не существует' });
+    if (!user) return res.status(401).json({ error: 'Неправильный логин или пароль' });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: 'Вы ввели неверный пароль' });
+    if (!match) return res.status(401).json({ error: 'Неправильный логин или пароль' });
 
     const token = jwt.sign({ sub: user.id, login: user.login }, JWT_SECRET, { expiresIn: JWT_EXP });
     res.json({ token, id: user.id, name: user.name, lastName: user.lastName, patronymic: user.patronymic, login: user.login, isAdmin: user.isAdmin });
@@ -98,7 +99,7 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
         }
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
         console.log('Found user:', user);

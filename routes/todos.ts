@@ -16,7 +16,7 @@ interface TodoPayload {
     responsible?: string;
 }
 
-router.use(requireAuth); // обязательная авторизация для маршрута
+router.use(requireAuth);
 
 router.get("/", async (req: Request, res: Response) => {
     const {userId} = req.query;
