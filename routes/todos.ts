@@ -19,12 +19,12 @@ interface TodoPayload {
 router.use(requireAuth);
 
 router.get("/", async (req: Request, res: Response) => {
-    const {userId} = req.query;
+    const { userId } = req.query;
 
-    let query = supabase.from('todos').select('*').order('updateDate', {ascending: false});
+    let query = supabase.from('todos').select('*').order('id', {ascending: true});
 
     if (userId) {
-        query = query.or(`creator.eq.${userId},responsible.eq.${userId}`);
+        query = query.or(`creator.eq.${userId},responsible.eq.${userId}`).order('updateDate', { ascending: false });
     }
 
     const { data, error } = await query;

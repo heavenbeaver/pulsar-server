@@ -78,8 +78,6 @@ router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) 
 // Получение информации о текущем пользователе
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
     try {
-        console.log('User from middleware:', req.user);
-
         if (!req.user) {
             res.status(401).json({ error: 'Unauthorized'});
             return;
@@ -102,7 +100,6 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
-        console.log('Found user:', user);
         res.json(user);
 
     } catch (error) {
