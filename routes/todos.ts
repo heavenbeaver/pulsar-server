@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
+import { error } from 'node:console';
 
 const router = Router();
 
@@ -21,10 +22,14 @@ router.use(requireAuth);
 router.get("/", async (req: Request, res: Response) => {
     const { userId } = req.query;
 
-    let query = supabase.from('todos').select('*').order('id', {ascending: true});
+    let query = supabase
+        .from('todos')
+        .select('*')
+        
+        .order('id', { ascending: true });
 
     if (userId) {
-        query = query.or(`creator.eq.${userId},responsible.eq.${userId}`).order('updateDate', { ascending: false });
+        query = query.or(`creator.eq.${userId},responsible.eq.${userId}`).in('status', ['К выполнению','Выполняется']).order('updateDate', { ascending: false });
     }
 
     const { data, error } = await query;
@@ -32,6 +37,38 @@ router.get("/", async (req: Request, res: Response) => {
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
 });
+
+router.get("/archived", async (req: Request, res: Response) => {
+    const { userId, page = 1, limit = 15 } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+
+    let query = supabase
+        .from('todos')
+        .select('*', {count: 'exact'}) // получаем общее количество
+        .in('status', ['Выполнена', 'Отменена'])
+        .range(offset, offset + limitNum - 1) // пагинация
+        .order('id', { ascending: true });
+
+    if (userId) {
+        query = query.or(`creator.eq.${userId},responsible.eq.${userId}`)
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({
+        data,
+        pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil((count || 0) / limitNum),
+            totalItems: count,
+            limit: limitNum
+        }
+    });
+})
 
 router.get("/:id", async (req: Request, res: Response) => {
     const { id } = req.params;
