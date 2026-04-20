@@ -1,40 +1,17 @@
-import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET!;
-
-declare global {
-    namespace Express {
-        interface Request {
-            user?: {
-                id: string;
-                login: string;
-            }
-        }
-    }
-}
-
-interface JwtPayload {
-    sub: string;
-    login?: string;
-    username?: string;
-}
-
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+const JWT_SECRET = process.env.JWT_SECRET;
+export function requireAuth(req, res, next) {
     let token = req.cookies.token;
-
     if (!token) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
     }
-
     try {
-        const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
+        const payload = jwt.verify(token, JWT_SECRET);
         req.user = {
             id: payload.sub,
             login: payload.login ?? payload.username ?? ''
         };
-
         // Проверяем, что установили id
         if (!req.user.id) {
             console.error('No user ID in token payload:', payload);
@@ -42,9 +19,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
             return;
         }
         next();
-    } catch (err) {
+    }
+    catch (err) {
         console.error('JWT verification error:', err);
         res.status(401).json({ error: 'Invalid token' });
         return;
     }
 }
+//# sourceMappingURL=authMiddleware.js.map
