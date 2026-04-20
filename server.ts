@@ -7,39 +7,10 @@ import cors from 'cors';
 
 const app = express();
 
-const allowedOrigins = new Set(
-    [
-        process.env.CLIENT_URL,
-        'http://localhost:5173',
-        'https://todo-client-sigma-eight.vercel.app'
-    ].filter(Boolean) as string[]
-);
-
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow non-browser requests without Origin header.
-        if (!origin) {
-            callback(null, true);
-            return;
-        }
-
-        if (allowedOrigins.has(origin)) {
-            callback(null, true);
-            return;
-        }
-
-        callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
+    origin: process.env.CLIENT_URL,
     credentials: true
 }));
-
-app.use((req, res, next) => {
-    // Authenticated API responses should not be cached by browsers/CDN.
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    next();
-});
 
 app.use(cookieParser());
 app.use(express.json());
