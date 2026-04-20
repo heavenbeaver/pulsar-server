@@ -20,31 +20,26 @@ interface JwtPayload {
     username?: string;
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-    let token = req.cookies.token;
-
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-
+const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-        req.user = {
-            id: payload.sub,
-            login: payload.login ?? payload.username ?? ''
-        };
+        const token = req.cookies.token;
 
-        // Проверяем, что установили id
-        if (!req.user.id) {
-            console.error('No user ID in token payload:', payload);
-            res.status(401).json({ error: 'Invalid token structure' });
-            return;
+        if (!token) {
+            return res.status(401).json({ error: 'No token provided' });
         }
+
+        // Декодируем токен - обратите внимание на 'sub'
+        const decoded = jwt.verify(token, JWT_SECRET) as { sub: string; login: string };
+
+        // Устанавливаем req.user с id из sub
+        req.user = { id: decoded.sub, login: decoded.login };
+
         next();
-    } catch (err) {
-        console.error('JWT verification error:', err);
-        res.status(401).json({ error: 'Invalid token' });
-        return;
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.clearCookie('token');
+        return res.status(401).json({ error: 'Invalid token' });
     }
-}
+};
+
+export default requireAuth;
