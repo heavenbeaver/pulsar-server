@@ -27,6 +27,7 @@ interface LoginRequest {
 // Регистрация нового пользователя
 router.post('/signup', async (req: Request<{}, {}, SignupRequest>, res: Response) => {
     const { name, lastName, patronymic, login, password, head } = req.body;
+
     if (!login || !password) return res.status(400).json({ error: 'login и password required' });
 
     const salt = await bcrypt.genSalt(10);
@@ -41,9 +42,18 @@ router.post('/signup', async (req: Request<{}, {}, SignupRequest>, res: Response
     if (error) return res.status(500).json({ error: error.message });
     // res.status(201).json({ id: data.id });
 
-    const token = jwt.sign({sub: data.id, login: data.login}, JWT_SECRET, {expiresIn: JWT_EXP});
+    const token = jwt.sign({ sub: data.id, login: data.login }, JWT_SECRET, { expiresIn: JWT_EXP });
+
+    // установка cookie
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+        path: '/'
+    });
+
     res.status(201).json({
-        token,
         id: data.id,
         name: data.name,
         lastName: data.lastName,
@@ -56,6 +66,7 @@ router.post('/signup', async (req: Request<{}, {}, SignupRequest>, res: Response
 // Вход в систему
 router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) => {
     const { login, password } = req.body;
+
     if (!login || !password) return res.status(400).json({ error: 'Введите логин и пароль' });
 
     const { data: user, error } = await supabase
@@ -65,21 +76,34 @@ router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) 
         .maybeSingle();
 
     if (error) return res.status(500).json({ error: error.message });
-    
+
     if (!user) return res.status(401).json({ error: 'Неправильный логин или пароль' });
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: 'Неправильный логин или пароль' });
 
     const token = jwt.sign({ sub: user.id, login: user.login }, JWT_SECRET, { expiresIn: JWT_EXP });
-    res.json({ token, id: user.id, name: user.name, lastName: user.lastName, patronymic: user.patronymic, login: user.login, isAdmin: user.isAdmin });
+
+    // установка cookie
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+        path: '/'
+    });
+
+    res.json({ id: user.id, name: user.name, lastName: user.lastName, patronymic: user.patronymic, login: user.login, isAdmin: user.isAdmin });
 });
 
 // Получение информации о текущем пользователе
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
     try {
+
         if (!req.user) {
-            res.status(401).json({ error: 'Unauthorized'});
+            res.clearCookie('token');
+            console.log('Пользователь не авторизован!');
+            res.status(401).json({ error: 'Unauthorized' });
             return;
         }
 
@@ -92,11 +116,13 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
             .single();
 
         if (error) {
+            res.clearCookie('token');
             console.error('Supabase error:', error);
             return res.status(500).json({ error: error.message });
         }
 
         if (!user) {
+            res.clearCookie('token');
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
@@ -110,6 +136,7 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
 
 // Выход из системы
 router.post('/logout', (req: Request, res: Response) => {
+    res.clearCookie('token');
     res.status(204).end();
 });
 

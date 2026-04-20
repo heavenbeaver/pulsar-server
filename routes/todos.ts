@@ -1,7 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
-import { error } from 'node:console';
 
 const router = Router();
 
@@ -25,7 +24,6 @@ router.get("/", async (req: Request, res: Response) => {
     let query = supabase
         .from('todos')
         .select('*')
-        
         .order('id', { ascending: true });
 
     if (userId) {

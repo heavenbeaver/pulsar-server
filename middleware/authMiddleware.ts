@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -21,14 +21,7 @@ interface JwtPayload {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-    const authHeader = req.headers.authorization;
-
-    // Получаем токен из заголовка Authorization
-    let token: string | null = null;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.split(' ')[1] ?? null;
-    }
+    let token = req.cookies.token;
 
     if (!token) {
         res.status(401).json({ error: 'Unauthorized' });
