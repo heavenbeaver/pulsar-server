@@ -99,12 +99,11 @@ router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) 
 // Получение информации о текущем пользователе
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
     try {
-
-        if (!req.user) {
+        // Проверка наличия пользователя
+        if (!req.user?.id) {
             res.clearCookie('token');
             console.log('Пользователь не авторизован!');
-            res.status(401).json({ error: 'Unauthorized' });
-            return;
+            return res.status(401).json({ error: 'Unauthorized' });
         }
 
         const userId = req.user.id;
@@ -116,8 +115,8 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
             .single();
 
         if (error) {
-            res.clearCookie('token');
             console.error('Supabase error:', error);
+            res.clearCookie('token');
             return res.status(500).json({ error: error.message });
         }
 
@@ -126,11 +125,11 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
-        res.json(user);
+        return res.json(user);
 
     } catch (error) {
         console.error('Server error in /me:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
