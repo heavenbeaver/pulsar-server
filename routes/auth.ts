@@ -15,7 +15,7 @@ const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
     // In production client and API are on different domains, so cookie must be cross-site.
-    sameSite: isProduction ? 'none' : 'lax',
+    sameSite: isProduction ? 'lax' : 'none',
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/'
 } as const;
