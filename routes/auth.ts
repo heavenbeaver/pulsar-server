@@ -99,14 +99,7 @@ router.post('/login', async (req: Request<{}, {}, LoginRequest>, res: Response) 
 // Получение информации о текущем пользователе
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
     try {
-        // Проверка наличия пользователя
-        if (!req.user?.id) {
-            res.clearCookie('token');
-            console.log('Пользователь не авторизован!');
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        const userId = req.user.id;
+        const userId = req.user?.id;
 
         const { data: user, error } = await supabase
             .from('users')
