@@ -33,6 +33,14 @@ app.use(cors({
     credentials: true
 }));
 
+app.use((req, res, next) => {
+    // Authenticated API responses should not be cached by browsers/CDN.
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
+
 app.use(cookieParser());
 app.use(express.json());
 
