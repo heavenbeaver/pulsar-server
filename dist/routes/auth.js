@@ -8,6 +8,15 @@ if (!JWT_SECRET)
     throw new Error('JWT_SECRET must be defined');
 const JWT_EXP = '7d';
 const router = Router();
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    // In production client and API are on different domains, so cookie must be cross-site.
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/'
+};
 // Регистрация нового пользователя
 router.post('/signup', async (req, res) => {
     const { name, lastName, patronymic, login, password, head } = req.body;
@@ -24,14 +33,7 @@ router.post('/signup', async (req, res) => {
         return res.status(500).json({ error: error.message });
     // res.status(201).json({ id: data.id });
     const token = jwt.sign({ sub: data.id, login: data.login }, JWT_SECRET, { expiresIn: JWT_EXP });
-    // установка cookie
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
-        path: '/'
-    });
+    res.cookie('token', token, cookieOptions);
     res.status(201).json({
         id: data.id,
         name: data.name,
@@ -59,14 +61,7 @@ router.post('/login', async (req, res) => {
     if (!match)
         return res.status(401).json({ error: 'Неправильный логин или пароль' });
     const token = jwt.sign({ sub: user.id, login: user.login }, JWT_SECRET, { expiresIn: JWT_EXP });
-    // установка cookie
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
-        path: '/'
-    });
+    res.cookie('token', token, cookieOptions);
     res.json({ id: user.id, name: user.name, lastName: user.lastName, patronymic: user.patronymic, login: user.login, isAdmin: user.isAdmin });
 });
 // Получение информации о текущем пользователе
@@ -80,11 +75,11 @@ router.get('/me', requireAuth, async (req, res) => {
             .single();
         if (error) {
             console.error('Supabase error:', error);
-            res.clearCookie('token');
+            res.clearCookie('token', cookieOptions);
             return res.status(500).json({ error: error.message });
         }
         if (!user) {
-            res.clearCookie('token');
+            res.clearCookie('token', cookieOptions);
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
         return res.json(user);
@@ -96,7 +91,7 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 // Выход из системы
 router.post('/logout', (req, res) => {
-    res.clearCookie('token');
+    res.clearCookie('token', cookieOptions);
     res.status(204).end();
 });
 export default router;
