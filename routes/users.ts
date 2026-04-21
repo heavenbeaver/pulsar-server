@@ -63,7 +63,8 @@ router.put("/:id", async (req: Request, res: Response) => {
         .eq("id", id)
         .select();
     if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0] || null);
+    // Отправляем данные со статусом 200 (OK)
+    res.status(200).json(updates || null);
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
